@@ -30,29 +30,15 @@
 (setq use-package-verbose t
       use-package-always-ensure t)
 
-(when (memq window-system '(mac ns))
-  (global-set-key [s-mouse-1] 'browse-url-at-mouse)
-  (let* ((size 14)
-	 (jpfont "Hiragino Maru Gothic ProN")
-	 (asciifont "Monaco")
-	 (h (* size 10)))
-    (set-face-attribute 'default nil :family asciifont :height h)
-    (set-fontset-font t 'katakana-jisx0201 jpfont)
-    (set-fontset-font t 'japanese-jisx0208 jpfont)
-    (set-fontset-font t 'japanese-jisx0212 jpfont)
-    (set-fontset-font t 'japanese-jisx0213-1 jpfont)
-    (set-fontset-font t 'japanese-jisx0213-2 jpfont)
-    (set-fontset-font t '(#x0080 . #x024F) asciifont))
-  (setq face-font-rescale-alist
-	'(("^-apple-hiragino.*" . 1.2)
-	  (".*-Hiragino Maru Gothic ProN-.*" . 1.2)
-	  (".*osaka-bold.*" . 1.2)
-	  (".*osaka-medium.*" . 1.2)
-	  (".*courier-bold-.*-mac-roman" . 1.0)
-	  (".*monaco cy-bold-.*-mac-cyrillic" . 0.9)
-	  (".*monaco-bold-.*-mac-roman" . 0.9)
-	  ("-cdac$" . 1.3)))
-  (setq frame-inherited-parameters '(font tool-bar-lines)))
+;; font setting
+(create-fontset-from-ascii-font "Menlo-11:weight=normal:slant=normal" nil "menlomarugo")
+(set-fontset-font "fontset-menlomarugo"
+                  'unicode
+                  (font-spec :family "Hiragino Maru Gothic ProN" :size 14)
+                  nil
+                  'append)
+(add-to-list 'default-frame-alist '(font . "fontset-menlomarugo"))
+(setq-default line-spacing 2)
 
 (require 'package)
 (setq color-themes '())
@@ -69,7 +55,7 @@
 
 (defun my/ido-recentf ()
   (interactive)
-  n(find-file (ido-completing-read "Find recent file: " recentf-list)))
+  (find-file (ido-completing-read "Find recent file: " recentf-list)))
 
 (use-package recentf
   :config
@@ -124,7 +110,12 @@
 
 (use-package flycheck
   :ensure t
-  :init (global-flycheck-mode))
+  :init (global-flycheck-mode)
+  :config
+  (custom-set-variables
+   '(flycheck-disabled-checkers '(javascript-jshint javascript-jscs))
+   )
+  )
 
 (use-package go-mode
   :config
@@ -140,6 +131,32 @@
   :config 
   (add-hook 'go-mode-hook 'go-eldoc-setup))
 
+(use-package rust-mode
+  :config
+  (add-to-list 'exec-path (expand-file-name "~/.cargo/bin/"))
+  (setq-default rust-format-on-save t)
+  (add-hook 'rust-mode-hook (lambda ()
+			      (racer-mode)
+			      (flycheck-rust-setup)))
+  (add-hook 'racer-mode-hook #'eldoc-mode)
+  (add-hook 'racer-mode-hook (lambda ()
+			       (company-mode)
+                             ;;; この辺の設定はお好みで
+			       (set (make-variable-buffer-local 'company-idle-delay) 0.1)
+			       (set (make-variable-buffer-local 'company-minimum-prefix-length) 0)))
+  )
+
+
+(use-package popwin
+  :config
+  (popwin-mode 1))
+
+
+(use-package rjsx-mode
+  :config
+  (add-to-list 'auto-mode-alist '(".*\\.js\\'" . rjsx-mode))
+  (setq js2-strict-missing-semi-warning nil)
+  )
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
